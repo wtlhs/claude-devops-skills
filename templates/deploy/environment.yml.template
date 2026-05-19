@@ -1,0 +1,31 @@
+# 环境配置模板
+
+server:
+  name: example
+  host: <server-host>
+  user: <ssh-user>
+  deploy_dir: <remote-deploy-dir>
+  shared_config_dir: <remote-shared-config-dir>
+
+git:
+  repository: <git-repository-url>
+  branch: main
+  remote_project_dir: <remote-project-dir>
+
+docker:
+  compose_file: <remote-compose-file>
+  compose_project_dir: <remote-compose-project-dir>
+  network: <docker-network>
+
+services:
+  - name: app
+    type: code
+    local_paths:
+      - src/
+    build_command: docker compose build --no-cache app
+    up_command: docker compose up -d --force-recreate app
+
+health_checks:
+  - name: app-health
+    command: curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/health
+    expected: "200"

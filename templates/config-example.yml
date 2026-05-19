@@ -1,0 +1,75 @@
+# ============================================================
+# claude-devops-skills configuration
+# 所有字段均可选；安装脚本会自动检测并生成。
+# ============================================================
+
+project:
+  name: ""
+  requirements_dir: "docs/requirements"
+  templates_dir: "docs/templates"
+
+repository:
+  github_url: ""
+  default_branch: "main"
+  project_path: ""
+
+stack:
+  type: ""
+  package_manager: ""
+  monorepo:
+    tool: ""
+    apps: []
+  quality_gates:
+    typecheck:
+      enabled: true
+      command: ""
+    lint:
+      enabled: true
+      command: ""
+    test:
+      enabled: true
+      command: ""
+    build:
+      enabled: true
+      command: ""
+  extras: []
+
+scopes: []
+
+domain:
+  name: ""
+  principle: ""
+  check_questions: []
+
+labels:
+  types: ["feature", "task", "bug", "refactor", "docs", "chore"]
+  priorities: ["P0", "P1", "P2", "P3"]
+  statuses: ["todo", "in-progress", "in-review", "done"]
+
+review:
+  dimensions:
+    - name: "correctness"
+      description: "逻辑正确性、边界条件、错误处理"
+    - name: "code-standards"
+      description: "类型安全、命名、模块结构"
+    - name: "security"
+      description: "硬编码密钥、输入校验、注入风险、鉴权"
+    - name: "performance"
+      description: "N+1 查询、不必要加载、分页、缓存"
+    - name: "testing"
+      description: "新代码有测试、断言有意义"
+    - name: "documentation"
+      description: "文档更新、接口文档"
+    - name: "deployment"
+      description: "DB migration、环境变量、Dockerfile 变更"
+
+release:
+  version_file: "package.json"
+  changelog_file: "CHANGELOG.md"
+  conventional_commits: true
+
+deploy:
+  enabled: false
+  environments_dir: ""
+  source_paths: []
+  service_aliases: {}

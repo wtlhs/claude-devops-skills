@@ -1,0 +1,51 @@
+name: Task
+description: Atomic development task that can be picked and completed independently
+labels: ["type: task", "status: todo"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 任务描述
+      description: 明确说明这个任务要做什么
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-notes
+    attributes:
+      label: 技术要点
+      description: 涉及文件、技术方案、边界与风险点
+      placeholder: |
+        - 涉及文件:
+        - 技术方案:
+        - 注意事项:
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 完成标准
+      placeholder: |
+        - [ ] 标准 1
+        - [ ] 标准 2
+    validations:
+      required: true
+
+  - type: input
+    id: parent
+    attributes:
+      label: 父需求 Issue
+      placeholder: '#123'
+
+  - type: input
+    id: dependencies
+    attributes:
+      label: 依赖任务
+      placeholder: '#124, #125 或 -'
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 影响范围
+      description: 列出受影响模块或 scope

@@ -1,0 +1,50 @@
+name: Feature Request
+description: Track a complete feature with acceptance criteria and scope
+labels: ["type: feature", "status: todo"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景与动机
+      description: 为什么要做这个需求？当前问题是什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 功能描述
+      description: 描述目标行为、核心流程与边界
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 使用 checklist 风格列出
+      placeholder: |
+        - [ ] 标准 1
+        - [ ] 标准 2
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 影响范围
+      description: 列出受影响模块或 scope
+    validations:
+      required: true
+
+  - type: input
+    id: priority
+    attributes:
+      label: 优先级
+      placeholder: P0 / P1 / P2 / P3
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: 任务清单
+      description: 由 /task-split 回填具体子任务
