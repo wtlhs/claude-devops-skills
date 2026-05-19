@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PYTHONIOENCODING="utf-8"
+
 log() {
   printf '[detect] %s\n' "$*"
 }
@@ -153,7 +155,7 @@ for child in sorted(apps_dir.iterdir()):
     scope = name.split('/')[-1].replace('bi-', '').replace('app-', '')
     results.append({
         'name': name,
-        'path': str(child.relative_to(apps_dir.parent)).replace('\\\\', '/'),
+        'path': str(child.relative_to(apps_dir.parent)).replace('\\', '/'),
         'scope': scope,
     })
 print(json.dumps(results, ensure_ascii=False))
@@ -180,7 +182,7 @@ detect_quality_gate_command() {
           printf '%s lint\n' "$pm"
           ;;
         pip)
-          printf 'pytest\n'
+          printf 'ruff check .\n'
           ;;
         maven)
           printf 'mvn -q -DskipTests verify\n'
@@ -254,6 +256,9 @@ detect_extras_json() {
   local extras=()
   if has_file "$root/prisma/schema.prisma" || has_file "$root/apps/bi-backend/prisma/schema.prisma"; then
     extras+=("prisma")
+  fi
+  if has_file "$root/apps/bi-backend/package.json"; then
+    extras+=("backend-vitest")
   fi
   printf '%s\n' "${extras[@]:-}" | json_array_from_lines
 }

@@ -199,6 +199,93 @@ copy_rules_and_templates() {
   fi
 }
 
+merge_top_level_yaml_sections() {
+  local base_file="$1"
+  local override_file="$2"
+  local output_file="$3"
+
+  python - <<'PY' "$base_file" "$override_file" "$output_file"
+import sys
+from pathlib import Path
+
+base_path = Path(sys.argv[1])
+override_path = Path(sys.argv[2])
+output_path = Path(sys.argv[3])
+
+
+def split_sections(text: str):
+    sections = []
+    current_key = None
+    current_lines = []
+
+    for line in text.splitlines(keepends=True):
+        stripped = line.strip()
+        is_top_level = line and not line.startswith((' ', '\t')) and stripped.endswith(':') and ':' in stripped[:-1] + ':'
+        if is_top_level:
+            if current_key is not None:
+                sections.append((current_key, ''.join(current_lines)))
+            current_key = stripped[:-1]
+            current_lines = [line]
+        else:
+            if current_key is None:
+                current_key = '__preamble__'
+                current_lines = []
+            current_lines.append(line)
+
+    if current_key is not None:
+        sections.append((current_key, ''.join(current_lines)))
+
+    return sections
+
+base_text = base_path.read_text(encoding='utf-8')
+override_text = override_path.read_text(encoding='utf-8')
+base_sections = split_sections(base_text)
+override_sections = split_sections(override_text)
+override_map = {key: body for key, body in override_sections if key != '__preamble__'}
+existing_keys = [key for key, _ in base_sections]
+merged_sections = []
+
+for key, body in base_sections:
+    if key in override_map:
+        merged_sections.append(override_map[key])
+    else:
+        merged_sections.append(body)
+
+for key, body in override_sections:
+    if key != '__preamble__' and key not in existing_keys:
+        if merged_sections and not merged_sections[-1].endswith('\n\n'):
+            if merged_sections[-1].endswith('\n'):
+                merged_sections[-1] += '\n'
+            else:
+                merged_sections[-1] += '\n\n'
+        merged_sections.append(body)
+
+output_path.write_text(''.join(merged_sections), encoding='utf-8')
+PY
+}
+
+apply_project_override() {
+  local project="$1"
+  local config_path="$2"
+  local override_path="$project/.claude/claude-devops.project.yml"
+
+  if [[ ! -f "$override_path" ]]; then
+    return
+  fi
+
+  log "Apply project override: $override_path"
+
+  if [[ "$DRY_RUN" == true ]]; then
+    printf '[dry-run] merge override %q into %q\n' "$override_path" "$config_path"
+    return
+  fi
+
+  local temp_output
+  temp_output="$(mktemp)"
+  merge_top_level_yaml_sections "$config_path" "$override_path" "$temp_output"
+  mv "$temp_output" "$config_path"
+}
+
 write_config() {
   local project="$1"
   local config_path="$project/.claude-devops.yml"
@@ -207,13 +294,16 @@ write_config() {
   fi
   if [[ -f "$config_path" ]]; then
     log "Skip existing config: $config_path"
+    apply_project_override "$project" "$config_path"
     return
   fi
   if [[ "$DRY_RUN" == true ]]; then
     printf '[dry-run] bash %q --config %q > %q\n' "$SCRIPT_DIR/lib/detect.sh" "$project" "$config_path"
+    printf '[dry-run] apply project override if %q exists\n' "$project/.claude/claude-devops.project.yml"
     return
   fi
   bash "$SCRIPT_DIR/lib/detect.sh" --config "$project" > "$config_path"
+  apply_project_override "$project" "$config_path"
 }
 
 extract_github_repo() {
