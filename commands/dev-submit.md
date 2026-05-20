@@ -60,4 +60,4 @@ description: "自测并提交 PR：执行质量门禁后创建 Pull Request"
 - 执行过的门禁
 - commit message
 - PR 链接
-- 后续建议（如 `/review latest`）
+- 后续建议（如 `/pr-review latest`）

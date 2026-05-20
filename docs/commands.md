@@ -6,7 +6,7 @@
 - `/task-split`
 - `/dev-pick`
 - `/dev-submit`
-- `/review`
+- `/pr-review`
 - `/merge`
 - `/release`
 - `/rollback`
@@ -23,5 +23,5 @@
 ## 典型流程
 
 ```text
-/requirement → /task-split → /dev-pick → /dev-submit → /review → /merge → /release
+/requirement → /task-split → /dev-pick → /dev-submit → /pr-review → /merge → /release
 ```

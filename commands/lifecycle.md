@@ -1,5 +1,5 @@
 ---
-description: "全流程编排：统一串联 requirement → task-split → dev-pick → dev-submit → review → merge → release"
+description: "全流程编排：统一串联 requirement → task-split → dev-pick → dev-submit → pr-review → merge → release"
 ---
 
 # 开发全流程编排
@@ -17,7 +17,7 @@ description: "全流程编排：统一串联 requirement → task-split → dev-
 
 - `/lifecycle start "需求描述"` → `/requirement` → `/task-split`
 - `/lifecycle next` → 自动选择下一个可做任务 → `/dev-pick`
-- `/lifecycle review [PR#]` → `/review`
+- `/lifecycle review [PR#]` → `/pr-review`
 - `/lifecycle merge [PR#]` → `/merge`
 - `/lifecycle release [type]` → `/release`
 - `/lifecycle status` → 展示 open issues / open PRs / 最近 tags / 下一步建议

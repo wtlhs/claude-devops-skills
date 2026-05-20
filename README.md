@@ -10,7 +10,7 @@
 - `/task-split`：从需求文档拆分 GitHub Feature / Task Issues
 - `/dev-pick`：认领 Issue 并创建开发分支
 - `/dev-submit`：执行质量门禁并创建 PR
-- `/review`：按多维度审查 PR
+- `/pr-review`：按多维度审查 PR
 - `/merge`：合并 PR 并清理分支
 - `/release`：生成版本、CHANGELOG、Tag、GitHub Release
 - `/rollback`：回滚版本
