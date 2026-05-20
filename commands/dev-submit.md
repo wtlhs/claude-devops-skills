@@ -51,7 +51,10 @@ description: "自测并提交 PR：执行质量门禁后创建 Pull Request"
 ## 步骤 5：创建 PR
 
 - 基于 `.github/PULL_REQUEST_TEMPLATE.md` 生成 PR body
-- 自动关联对应 Issue
+- PR body 必须包含 `Closes #XX` 关键词来关联对应 Issue（支持 `Closes` / `Fixes` / `Resolves`）
+  - 如分支名含 Issue 编号（如 `feat/13-xxx`），关联 `Closes #13`
+  - 如有多个关联 Issue，全部列出：`Closes #13, Closes #14`
+  - 如无法推断 Issue 编号，提示用户手动提供
 - 更新 Issue/PR 状态为 `in-review`
 
 ## 步骤 6：展示结果
