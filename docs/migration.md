@@ -41,5 +41,5 @@
 
 - `/requirement` 能正常产出需求文档
 - `/task-split` 能按模板创建父子 issue
-- `/dev-submit` 能按 pnpm + tsc + vitest + build 执行门禁
+- `/dev-submit` 能按 pnpm + compile/typecheck + vitest + build 执行门禁，且代码变更在本地无法证明可编译时会阻断提交
 - `/deploy` 能识别 `test-demo` 环境并做服务推荐

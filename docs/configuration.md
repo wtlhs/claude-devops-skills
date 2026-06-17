@@ -16,6 +16,25 @@
 
 完整字段示例见：`templates/config-example.yml`
 
+## 质量门禁配置
+
+`stack.quality_gates` 控制 `/dev-submit` 在提交前必须执行的本地检查。推荐至少配置一个能证明代码可编译的门禁：
+
+| Gate | 目的 | 常见命令 |
+|------|------|----------|
+| `compile` | 强制证明代码可编译；`/dev-submit` 的首选阻断门禁 | `mvn -q -DskipTests compile`、`./gradlew testClasses`、`python -m compileall .`、`go test ./... -run '^$'` |
+| `typecheck` | 静态类型检查 | `pnpm typecheck`、`npx tsc --noEmit`、`mypy .` |
+| `lint` | 静态规范和潜在问题检查 | `pnpm lint`、`ruff check .`、`go vet ./...` |
+| `test` | 自动化测试 | `pnpm test`、`pytest`、`mvn test`、`go test ./...` |
+| `build` | 生产构建 / 可发布包构建 | `pnpm build`、`npm run build`、`mvn -q -DskipTests package`、`go build ./...` |
+
+执行规则：
+
+- 代码变更必须先通过 `compile`；如果未配置 `compile`，必须通过 `typecheck` 或 `build` 作为可编译证明。
+- 已启用且有命令的 `lint`、`test`、`build` 都必须继续执行。
+- 必需 gate 缺少命令时，不应静默跳过；应先补齐 `.claude-devops.yml`。
+- 纯文档变更可跳过运行时代码门禁，但 PR body 必须说明原因。
+
 ## 项目特化覆盖（Project Override）
 
 通用安装器会同时考虑两类配置：

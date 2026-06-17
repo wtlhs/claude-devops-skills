@@ -26,18 +26,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Type check
-        run: pnpm exec tsc --noEmit
-        continue-on-error: true
+      - name: Compile / type check
+        run: |
+          if pnpm run | grep -q '^  typecheck'; then
+            pnpm typecheck
+          elif pnpm run | grep -q '^  type-check'; then
+            pnpm type-check
+          else
+            pnpm exec tsc --noEmit
+          fi
 
       - name: Lint
         run: pnpm lint
-        continue-on-error: true
 
       - name: Test
         run: pnpm test
-        continue-on-error: true
 
       - name: Build
         run: pnpm build
-        continue-on-error: true

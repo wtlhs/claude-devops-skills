@@ -23,6 +23,8 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest
 
+      - name: Compile Python sources
+        run: python -m compileall .
+
       - name: Test
         run: pytest
-        continue-on-error: true

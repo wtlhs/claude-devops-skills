@@ -18,6 +18,8 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Compile
+        run: mvn -B -DskipTests compile
+
       - name: Build and test
         run: mvn -B verify
-        continue-on-error: true

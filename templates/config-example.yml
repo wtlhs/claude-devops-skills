@@ -20,17 +20,22 @@ stack:
     tool: ""
     apps: []
   quality_gates:
+    # enabled=true 时 command 必须非空，否则 /dev-submit 会将其视为配置错误并阻断。
+    # 安装器会按项目技术栈自动生成命令；手写模板时请补齐命令后再启用。
+    compile:
+      enabled: false
+      command: ""
     typecheck:
-      enabled: true
+      enabled: false
       command: ""
     lint:
-      enabled: true
+      enabled: false
       command: ""
     test:
-      enabled: true
+      enabled: false
       command: ""
     build:
-      enabled: true
+      enabled: false
       command: ""
   extras: []
 
