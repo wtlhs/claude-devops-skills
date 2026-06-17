@@ -71,6 +71,10 @@ detect_package_manager() {
     printf 'maven\n'
     return
   fi
+  if has_file "$root/gradlew" || has_file "$root/gradlew.bat" || has_file "$root/build.gradle" || has_file "$root/build.gradle.kts"; then
+    printf 'gradle\n'
+    return
+  fi
   if has_file "$root/go.mod"; then
     printf 'go\n'
     return
@@ -162,6 +166,109 @@ print(json.dumps(results, ensure_ascii=False))
 PY
 }
 
+detect_node_script_command() {
+  local root="$1"
+  local script="$2"
+  local pm
+  pm="$(detect_package_manager "$root")"
+
+  if ! has_file "$root/package.json"; then
+    printf '\n'
+    return
+  fi
+
+  python - <<'PY' "$root/package.json" "$pm" "$script"
+import json, sys
+from pathlib import Path
+package_json, pm, script = sys.argv[1:]
+try:
+    data = json.loads(Path(package_json).read_text(encoding='utf-8'))
+except Exception:
+    print('')
+    raise SystemExit
+scripts = data.get('scripts') or {}
+if script not in scripts:
+    print('')
+    raise SystemExit
+if pm == 'npm':
+    print(f'npm run {script}')
+elif pm == 'yarn':
+    print(f'yarn {script}')
+else:
+    print(f'{pm} {script}')
+PY
+}
+
+detect_node_typecheck_command() {
+  local root="$1"
+  local script_cmd
+  script_cmd="$(detect_node_script_command "$root" typecheck)"
+  if [[ -n "$script_cmd" ]]; then
+    printf '%s\n' "$script_cmd"
+    return
+  fi
+
+  script_cmd="$(detect_node_script_command "$root" type-check)"
+  if [[ -n "$script_cmd" ]]; then
+    printf '%s\n' "$script_cmd"
+    return
+  fi
+
+  if has_file "$root/tsconfig.json" || has_dir "$root/apps"; then
+    printf 'npx tsc --noEmit\n'
+    return
+  fi
+
+  printf '\n'
+}
+
+detect_node_lint_command() {
+  local root="$1"
+  detect_node_script_command "$root" lint
+}
+
+detect_node_test_command() {
+  local root="$1"
+  local script_cmd
+  script_cmd="$(detect_node_script_command "$root" test)"
+  if [[ -n "$script_cmd" ]]; then
+    printf '%s\n' "$script_cmd"
+    return
+  fi
+
+  if has_file "$root/vitest.config.ts" || has_file "$root/vitest.config.js" || has_file "$root/jest.config.js" || has_file "$root/jest.config.ts"; then
+    local pm
+    pm="$(detect_package_manager "$root")"
+    case "$pm" in
+      pnpm) printf 'pnpm test\n' ;;
+      npm) printf 'npm test\n' ;;
+      yarn) printf 'yarn test\n' ;;
+      *) printf '\n' ;;
+    esac
+    return
+  fi
+
+  printf '\n'
+}
+
+detect_node_build_command() {
+  local root="$1"
+  detect_node_script_command "$root" build
+}
+
+gradle_command() {
+  local root="$1"
+  if has_file "$root/gradlew"; then
+    printf './gradlew'
+    return
+  fi
+  if has_file "$root/gradlew.bat"; then
+    printf './gradlew.bat'
+    return
+  fi
+  printf 'gradle'
+}
+
 detect_quality_gate_command() {
   local root="$1"
   local gate="$2"
@@ -169,23 +276,45 @@ detect_quality_gate_command() {
   pm="$(detect_package_manager "$root")"
 
   case "$gate" in
+    compile)
+      case "$pm" in
+        pnpm|npm|yarn)
+          detect_node_typecheck_command "$root"
+          ;;
+        pip)
+          printf 'python -m compileall .\n'
+          ;;
+        maven)
+          printf 'mvn -q -DskipTests compile\n'
+          ;;
+        gradle)
+          printf '%s testClasses\n' "$(gradle_command "$root")"
+          ;;
+        go)
+          printf "go test ./... -run '^$'\n"
+          ;;
+        *)
+          printf '\n'
+          ;;
+      esac
+      ;;
     typecheck)
-      if has_file "$root/tsconfig.json" || has_dir "$root/apps"; then
-        printf 'npx tsc --noEmit\n'
-      else
-        printf '\n'
-      fi
+      case "$pm" in
+        pnpm|npm|yarn)
+          detect_node_typecheck_command "$root"
+          ;;
+        *)
+          printf '\n'
+          ;;
+      esac
       ;;
     lint)
       case "$pm" in
         pnpm|npm|yarn)
-          printf '%s lint\n' "$pm"
+          detect_node_lint_command "$root"
           ;;
         pip)
           printf 'ruff check .\n'
-          ;;
-        maven)
-          printf 'mvn -q -DskipTests verify\n'
           ;;
         go)
           printf 'go vet ./...\n'
@@ -197,20 +326,17 @@ detect_quality_gate_command() {
       ;;
     test)
       case "$pm" in
-        pnpm)
-          printf 'pnpm test\n'
-          ;;
-        npm)
-          printf 'npm test\n'
-          ;;
-        yarn)
-          printf 'yarn test\n'
+        pnpm|npm|yarn)
+          detect_node_test_command "$root"
           ;;
         pip)
           printf 'pytest\n'
           ;;
         maven)
           printf 'mvn test\n'
+          ;;
+        gradle)
+          printf '%s test\n' "$(gradle_command "$root")"
           ;;
         go)
           printf 'go test ./...\n'
@@ -222,20 +348,14 @@ detect_quality_gate_command() {
       ;;
     build)
       case "$pm" in
-        pnpm)
-          printf 'pnpm build\n'
-          ;;
-        npm)
-          printf 'npm run build\n'
-          ;;
-        yarn)
-          printf 'yarn build\n'
-          ;;
-        pip)
-          printf '\n'
+        pnpm|npm|yarn)
+          detect_node_build_command "$root"
           ;;
         maven)
           printf 'mvn -q -DskipTests package\n'
+          ;;
+        gradle)
+          printf '%s build\n' "$(gradle_command "$root")"
           ;;
         go)
           printf 'go build ./...\n'
@@ -273,6 +393,7 @@ generate_config_yaml() {
   local monorepo_tool
   local apps_json
   local extras_json
+  local compile_cmd
   local typecheck_cmd
   local lint_cmd
   local test_cmd
@@ -286,14 +407,15 @@ generate_config_yaml() {
   monorepo_tool="$(detect_monorepo_tool "$root")"
   apps_json="$(detect_apps_json "$root")"
   extras_json="$(detect_extras_json "$root")"
+  compile_cmd="$(detect_quality_gate_command "$root" compile)"
   typecheck_cmd="$(detect_quality_gate_command "$root" typecheck)"
   lint_cmd="$(detect_quality_gate_command "$root" lint)"
   test_cmd="$(detect_quality_gate_command "$root" test)"
   build_cmd="$(detect_quality_gate_command "$root" build)"
 
-  python - <<'PY' "$project_name" "$default_branch" "$github_url" "$stack_type" "$package_manager" "$monorepo_tool" "$apps_json" "$extras_json" "$typecheck_cmd" "$lint_cmd" "$test_cmd" "$build_cmd"
+  python - <<'PY' "$project_name" "$default_branch" "$github_url" "$stack_type" "$package_manager" "$monorepo_tool" "$apps_json" "$extras_json" "$compile_cmd" "$typecheck_cmd" "$lint_cmd" "$test_cmd" "$build_cmd"
 import json, sys
-project_name, default_branch, github_url, stack_type, package_manager, monorepo_tool, apps_json, extras_json, typecheck_cmd, lint_cmd, test_cmd, build_cmd = sys.argv[1:]
+project_name, default_branch, github_url, stack_type, package_manager, monorepo_tool, apps_json, extras_json, compile_cmd, typecheck_cmd, lint_cmd, test_cmd, build_cmd = sys.argv[1:]
 apps = json.loads(apps_json)
 extras = json.loads(extras_json)
 scopes = [{"name": app["name"], "path": app["path"], "label": app["scope"]} for app in apps] or [{"name": "app", "path": ".", "label": "app"}]
@@ -325,6 +447,7 @@ if not apps:
     lines.append('      []')
 lines.extend([
     '  quality_gates:',
+    f'    compile: {{ enabled: {str(bool(compile_cmd)).lower()}, command: "{compile_cmd}" }}',
     f'    typecheck: {{ enabled: {str(bool(typecheck_cmd)).lower()}, command: "{typecheck_cmd}" }}',
     f'    lint: {{ enabled: {str(bool(lint_cmd)).lower()}, command: "{lint_cmd}" }}',
     f'    test: {{ enabled: {str(bool(test_cmd)).lower()}, command: "{test_cmd}" }}',
